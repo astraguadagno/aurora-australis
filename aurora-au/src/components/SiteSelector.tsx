@@ -3,14 +3,14 @@ type Props = {
   onChange: (v: string) => void;
 };
 
+// Valid SWS sites (example subset); ensure we default to a valid station
 const OPTIONS = [
   "Hobart",
-  "Launceston",
   "Canberra",
-  "Melbourne",
-  "Sydney",
-  "Perth",
-  "Townsville",
+  "Learmonth",
+  "Darwin",
+  "Mawson",
+  "Macquarie Island",
 ] as const;
 
 export default function SiteSelector({ value, onChange }: Props) {

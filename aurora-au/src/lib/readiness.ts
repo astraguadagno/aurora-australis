@@ -44,16 +44,39 @@ export type ReadinessInput = {
 
 export type ReadinessResult = { score: number; factors: string[] };
 
+export function kBucket(k: number | null | undefined): "low" | "moderate" | "high" | "very high" {
+  if (k == null) return "low";
+  if (k >= 7) return "very high";
+  if (k >= 5) return "high";
+  if (k >= 4) return "moderate";
+  return "low";
+}
+
+export function describeFactors(
+  inp: ReadinessInput,
+  g: number,
+  c: number,
+  m: number,
+): string[] {
+  const parts: string[] = [];
+  const kVal = typeof inp.kNow === "number" ? inp.kNow : null;
+  const kDesc = kBucket(kVal);
+  parts.push(`Geomagnetic ${g}/40 — K=${kVal ?? "n/a"} (${kDesc})`);
+  if (inp.cloudNowPct != null) parts.push(`Clouds ${c}/40 — ${Math.round(inp.cloudNowPct)}% clouds`);
+  else parts.push(`Clouds ${c}/40 — unknown`);
+  if (inp.moonIllumPct != null) {
+    const alt = inp.moonAltDeg != null ? `, alt ${Math.round(inp.moonAltDeg)}°` : "";
+    parts.push(`Moon ${m}/20 — illum ${Math.round(inp.moonIllumPct)}%${alt}`);
+  } else parts.push(`Moon ${m}/20 — unknown`);
+  return parts;
+}
+
 export function computeReadiness(inp: ReadinessInput): ReadinessResult {
   const g = geomagneticScoreFromSignals(inp.alert, inp.watch, inp.kNow);
   const c = cloudScore(inp.cloudNowPct);
   const m = moonScore(inp.moonIllumPct, inp.moonAltDeg);
   const score = clamp(g + c + m, 0, 100);
-  const factors: string[] = [];
-  factors.push(`Geomagnetic +${g}/${W_GEO}`);
-  factors.push(`Clouds +${c}/${W_CLOUD}`);
-  factors.push(`Moon +${m}/${W_MOON}`);
-  return { score, factors };
+  return { score, factors: describeFactors(inp, g, c, m) };
 }
 
 export type HourPoint = {

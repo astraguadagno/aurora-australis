@@ -11,7 +11,7 @@ export default function ReadinessScore({ score, factors }: { score: number; fact
   return (
     <div className={`p-4 border rounded-xl bg-zinc-900 ${tone} space-y-3`}>
       <div className="text-sm opacity-80">Readiness</div>
-      <div className="text-4xl font-semibold">{score}</div>
+      <div className="text-4xl font-semibold" aria-live="polite">{score}</div>
       <div className="flex flex-wrap gap-2">
         {factors.map((f, i) => (
           <span key={i} className="text-xs px-2 py-1 rounded-full border border-current/40">

@@ -151,10 +151,6 @@ export default async function Home() {
         <h2 className="text-lg font-medium">Readiness (now)</h2>
         <ReadinessSection site="Hobart" />
       </section>
-      <section className="space-y-3">
-        <h2 className="text-lg font-medium">Moon (tonight)</h2>
-        <MoonSection />
-      </section>
       <section className="space-y-2">
         <h2 className="text-lg font-medium">¿Salgo a buscarla?</h2>
         <AuroraReadiness alert={alert ?? undefined} watch={watch ?? undefined} />

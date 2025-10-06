@@ -53,11 +53,6 @@ export async function POST(request: Request) {
       payload.options = options;
     }
 
-    // TEMP: force a known-valid location to verify upstream data presence
-    if (process.env.NODE_ENV !== "production" && method === "get-k-index") {
-      payload.options = { location: "Hobart" };
-    }
-
     if (process.env.NODE_ENV !== "production") {
       const redacted = { ...payload, api_key: "***" };
       console.log(`[sws] request → ${method}`, redacted);

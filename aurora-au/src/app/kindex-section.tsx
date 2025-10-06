@@ -9,27 +9,29 @@ import { hoursAgoIso, nowIso } from "@/lib/time";
 
 type Point = { time: string; k: number };
 
-const fetcher = async (site: string) => {
+const fetcher = async (site: string): Promise<Point[]> => {
   const start = hoursAgoIso(48);
   const end = nowIso();
+
   const res = await getKIndex(site, start, end);
-  // Debug: log raw client result
-  // eslint-disable-next-line no-console
-  console.log("getKIndex raw:", res);
-  const maybe = (res as { data?: unknown } | undefined)?.data;
-  function hasDataArray(v: unknown): v is { data: Array<{ valid_time: string; index: number }> } {
-    return typeof v === "object" && v !== null && "data" in (v as Record<string, unknown>);
-  }
-  const arr = (Array.isArray(maybe) ? maybe : hasDataArray(maybe) ? maybe.data : undefined) as
-    | Array<{ valid_time: string; index: number }>
-    | undefined;
-  const safe = Array.isArray(arr) ? arr : [];
-  return safe.map((p) => ({ time: p.valid_time, k: p.index })) as Point[];
+  type Raw = { valid_time?: string; time?: string; index?: number; k?: number };
+  const arr: Raw[] = Array.isArray(res)
+    ? (res as Raw[])
+    : Array.isArray((res as { data?: Raw[] })?.data)
+      ? ((res as { data?: Raw[] })?.data as Raw[])
+      : [];
+
+  return arr.map((p) => ({
+    time: (p.valid_time ?? p.time) as string,
+    k: Number(p.index ?? p.k ?? 0),
+  }));
 };
 
 export default function KIndexSection() {
   const [site, setSite] = useState<string>("Hobart");
-  const { data, error, isLoading, mutate } = useSWR(["kindex", site], () => fetcher(site));
+  const { data, error, isLoading, mutate } = useSWR(["kindex", site], () => fetcher(site), {
+    revalidateOnFocus: false,
+  });
 
   const chartData = useMemo<Point[]>(() => data ?? [], [data]);
 
@@ -45,6 +47,7 @@ export default function KIndexSection() {
           Actualizar
         </button>
       </div>
+
       <div className="border rounded-md h-56">
         {isLoading ? (
           <div className="h-full flex items-center justify-center text-sm text-zinc-500">

@@ -1,38 +1,24 @@
 import { getAuroraAlert, getAuroraWatch, getAuroraOutlook } from "@/lib/sws";
-import type { AuroraAlert, AuroraWatch, AuroraOutlook } from "@/lib/types";
 import { toLocal } from "@/lib/time";
 import StatusCard from "@/components/StatusCard";
 import AuroraReadiness from "@/components/AuroraReadiness";
 import KIndexSection from "@/app/kindex-section";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
 
 export default async function Home() {
-  const [alertRes, watchRes, outlookRes] = await Promise.all([
-    (async () => {
-      try {
-        return await getAuroraAlert();
-      } catch {
-        return null;
-      }
-    })(),
-    (async () => {
-      try {
-        return await getAuroraWatch();
-      } catch {
-        return null;
-      }
-    })(),
-    (async () => {
-      try {
-        return await getAuroraOutlook();
-      } catch {
-        return null;
-      }
-    })(),
+  const [alert, watch, outlook] = await Promise.all([
+    getAuroraAlert()
+      .then((arr) => (Array.isArray(arr) && arr.length > 0 ? arr[0] : null))
+      .catch(() => null),
+    getAuroraWatch()
+      .then((arr) => (Array.isArray(arr) && arr.length > 0 ? arr[0] : null))
+      .catch(() => null),
+    getAuroraOutlook()
+      .then((arr) => (Array.isArray(arr) && arr.length > 0 ? arr[0] : null))
+      .catch(() => null),
   ]);
-
-  const alert: AuroraAlert | null = alertRes?.data?.[0] ?? null;
-  const watch: AuroraWatch | null = watchRes?.data?.[0] ?? null;
-  const outlook: AuroraOutlook | null = outlookRes?.data?.[0] ?? null;
 
   const alertItems: Array<{ label: string; value: string }> = [];
   if (alert?.start_time) alertItems.push({ label: "Inicio", value: toLocal(alert.start_time) });
@@ -146,6 +132,7 @@ export default async function Home() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">K-index (48 h)</h2>
+        <LocationPicker />
         <KIndexSection />
       </section>
 

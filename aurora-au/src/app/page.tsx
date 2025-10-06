@@ -6,6 +6,7 @@ import KIndexSection from "@/app/kindex-section";
 import dynamic from "next/dynamic";
 import WeatherSection from "@/app/weather-section";
 import MoonSection from "@/app/moon-section";
+import ReadinessSection from "@/app/readiness-section";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
 
@@ -141,6 +142,14 @@ export default async function Home() {
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Clouds (next 12–24h)</h2>
         <WeatherSection />
+      </section>
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">Moon (tonight)</h2>
+        <MoonSection />
+      </section>
+      <section className="space-y-2">
+        <h2 className="text-lg font-medium">Readiness (now)</h2>
+        <ReadinessSection site="Hobart" />
       </section>
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Moon (tonight)</h2>

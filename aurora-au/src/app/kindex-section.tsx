@@ -13,8 +13,18 @@ const fetcher = async (site: string) => {
   const start = hoursAgoIso(48);
   const end = nowIso();
   const res = await getKIndex(site, start, end);
-  const arr = (res?.data as Array<{ valid_time: string; index: number }>) || [];
-  return arr.map((p) => ({ time: p.valid_time, k: p.index })) as Point[];
+  // Debug: log raw client result
+  // eslint-disable-next-line no-console
+  console.log("getKIndex raw:", res);
+  const maybe = (res as { data?: unknown } | undefined)?.data;
+  function hasDataArray(v: unknown): v is { data: Array<{ valid_time: string; index: number }> } {
+    return typeof v === "object" && v !== null && "data" in (v as Record<string, unknown>);
+  }
+  const arr = (Array.isArray(maybe) ? maybe : hasDataArray(maybe) ? maybe.data : undefined) as
+    | Array<{ valid_time: string; index: number }>
+    | undefined;
+  const safe = Array.isArray(arr) ? arr : [];
+  return safe.map((p) => ({ time: p.valid_time, k: p.index })) as Point[];
 };
 
 export default function KIndexSection() {

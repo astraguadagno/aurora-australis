@@ -70,6 +70,12 @@ export async function POST(request: Request) {
       data = text;
     }
 
+    // Debug logging (safe): status and a small preview of upstream body
+    if (process.env.NODE_ENV !== "production") {
+      const preview = typeof text === "string" ? text.slice(0, 200) : String(text).slice(0, 200);
+      console.log(`[sws] ${method} → status=${status} body[0..200]=`, preview);
+    }
+
     // --- logueo útil en desarrollo ---
     if (!res.ok) {
       console.error("SWS error", status);

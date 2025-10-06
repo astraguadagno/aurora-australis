@@ -11,7 +11,13 @@ async function post<T>(method: string, options?: unknown): Promise<SwsResponse<T
   });
   const json: { ok?: boolean; status?: number; data?: unknown } = await res.json();
   if (!json?.ok) throw new Error(`SWS ${json?.status ?? "error"}`);
-  return { data: json.data as T };
+  // Some endpoints return { data: [...] }, others may nest like { data: { data: [...] } }
+  function hasData<U>(v: unknown): v is { data: U } {
+    return typeof v === "object" && v !== null && "data" in (v as Record<string, unknown>);
+  }
+  const raw = json.data as unknown;
+  const payload: T = hasData<T>(raw) ? raw.data : (raw as T);
+  return { data: payload };
 }
 
 export const getAuroraAlert = () => post<AuroraAlert[]>("get-aurora-alert");

@@ -3,23 +3,36 @@ import type { AuroraAlert, AuroraWatch, AuroraOutlook } from "@/lib/types";
 import { toLocal } from "@/lib/time";
 import StatusCard from "@/components/StatusCard";
 import AuroraReadiness from "@/components/AuroraReadiness";
-import KIndexSection from "./kindex-section";
-
-async function fetchSafe<T>(fn: () => Promise<{ data: T }>): Promise<T | null> {
-  try {
-    const res = await fn();
-    return (res as { data: T }).data ?? null;
-  } catch {
-    return null;
-  }
-}
+import KIndexSection from "@/app/kindex-section";
 
 export default async function Home() {
-  const [alert, watch, outlook] = await Promise.all([
-    fetchSafe<AuroraAlert>(() => getAuroraAlert()),
-    fetchSafe<AuroraWatch>(() => getAuroraWatch()),
-    fetchSafe<AuroraOutlook>(() => getAuroraOutlook()),
+  const [alertRes, watchRes, outlookRes] = await Promise.all([
+    (async () => {
+      try {
+        return await getAuroraAlert();
+      } catch {
+        return null;
+      }
+    })(),
+    (async () => {
+      try {
+        return await getAuroraWatch();
+      } catch {
+        return null;
+      }
+    })(),
+    (async () => {
+      try {
+        return await getAuroraOutlook();
+      } catch {
+        return null;
+      }
+    })(),
   ]);
+
+  const alert: AuroraAlert | null = alertRes?.data?.[0] ?? null;
+  const watch: AuroraWatch | null = watchRes?.data?.[0] ?? null;
+  const outlook: AuroraOutlook | null = outlookRes?.data?.[0] ?? null;
 
   const alertItems: Array<{ label: string; value: string }> = [];
   if (alert?.start_time) alertItems.push({ label: "Inicio", value: toLocal(alert.start_time) });
@@ -29,9 +42,11 @@ export default async function Home() {
   if (alert?.lat_band) alertItems.push({ label: "Latitud", value: String(alert.lat_band) });
 
   const watchItems: Array<{ label: string; value: string }> = [];
-  if (watch?.issue_time) watchItems.push({ label: "Emitido", value: toLocal(watch.issue_time) });
-  if (watch?.start_date) watchItems.push({ label: "Desde", value: toLocal(watch.start_date) });
-  if (watch?.end_date) watchItems.push({ label: "Hasta", value: toLocal(watch.end_date) });
+  if (watch?.start_date && watch?.end_date)
+    watchItems.push({
+      label: "Ventana",
+      value: `${toLocal(watch.start_date)} → ${toLocal(watch.end_date)}`,
+    });
   if (watch?.k_aus != null) watchItems.push({ label: "K AUS", value: String(watch.k_aus) });
   if (watch?.lat_band) watchItems.push({ label: "Latitud", value: String(watch.lat_band) });
 
@@ -47,48 +62,84 @@ export default async function Home() {
       <h1 className="text-2xl font-semibold">Aurora Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatusCard title="Alert" status={alert ? "warn" : "info"}>
-          {alertItems.length ? (
+        <StatusCard title="Alert" status={alert ? "ok" : "info"}>
+          {alert ? (
             <ul className="space-y-1">
-              {alertItems.map((it) => (
-                <li key={it.label} className="flex justify-between">
-                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
-                  <span className="font-medium">{it.value}</span>
+              {alert.k_aus != null && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">K AUS</span>
+                  <span className="font-medium">{String(alert.k_aus)}</span>
                 </li>
-              ))}
+              )}
+              {alert.lat_band && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Latitud</span>
+                  <span className="font-medium">{String(alert.lat_band)}</span>
+                </li>
+              )}
+              {alert.valid_until && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Válido hasta</span>
+                  <span className="font-medium">{toLocal(alert.valid_until)}</span>
+                </li>
+              )}
+              {alert.description && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Descripción</span>
+                  <span className="font-medium">{alert.description}</span>
+                </li>
+              )}
             </ul>
           ) : (
-            <span>Sin datos de alerta.</span>
+            <span>No active alert.</span>
           )}
         </StatusCard>
 
-        <StatusCard title="Watch" status={watch ? "warn" : "info"}>
-          {watchItems.length ? (
+        <StatusCard title="Watch (48h)" status={watch ? "warn" : "info"}>
+          {watch ? (
             <ul className="space-y-1">
-              {watchItems.map((it) => (
-                <li key={it.label} className="flex justify-between">
-                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
-                  <span className="font-medium">{it.value}</span>
+              {watch.start_date && watch.end_date && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Ventana</span>
+                  <span className="font-medium">{`${toLocal(watch.start_date)} → ${toLocal(watch.end_date)}`}</span>
                 </li>
-              ))}
+              )}
+              {watch.k_aus != null && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">K AUS</span>
+                  <span className="font-medium">{String(watch.k_aus)}</span>
+                </li>
+              )}
+              {watch.lat_band && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Latitud</span>
+                  <span className="font-medium">{String(watch.lat_band)}</span>
+                </li>
+              )}
             </ul>
           ) : (
-            <span>Sin datos de watch.</span>
+            <span>No current watch.</span>
           )}
         </StatusCard>
 
-        <StatusCard title="Outlook" status={outlook ? "info" : "info"}>
-          {outlookItems.length ? (
+        <StatusCard title="Outlook (3–7 días)" status={outlook ? "info" : "info"}>
+          {outlook ? (
             <ul className="space-y-1">
-              {outlookItems.map((it) => (
-                <li key={it.label} className="flex justify-between">
-                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
-                  <span className="font-medium">{it.value}</span>
+              {outlook.start_date && outlook.end_date && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Ventana</span>
+                  <span className="font-medium">{`${toLocal(outlook.start_date)} → ${toLocal(outlook.end_date)}`}</span>
                 </li>
-              ))}
+              )}
+              {outlook.cause && (
+                <li className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">Causa</span>
+                  <span className="font-medium">{outlook.cause}</span>
+                </li>
+              )}
             </ul>
           ) : (
-            <span>Sin datos de outlook.</span>
+            <span>No outlook available.</span>
           )}
         </StatusCard>
       </div>

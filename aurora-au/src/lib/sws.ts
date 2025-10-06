@@ -1,3 +1,5 @@
+import type { AuroraAlert, AuroraWatch, AuroraOutlook, KIndexPoint } from "@/lib/types";
+
 type SwsResponse<T> = { data: T };
 
 async function post<T>(method: string, options?: unknown): Promise<SwsResponse<T>> {
@@ -11,8 +13,12 @@ async function post<T>(method: string, options?: unknown): Promise<SwsResponse<T
   return json.data as SwsResponse<T>;
 }
 
-export const getAuroraAlert = () => post("get-aurora-alert");
-export const getAuroraWatch = () => post("get-aurora-watch");
-export const getAuroraOutlook = () => post("get-aurora-outlook");
+export const getAuroraAlert = () => post<AuroraAlert>("get-aurora-alert");
+export const getAuroraWatch = () => post<AuroraWatch>("get-aurora-watch");
+export const getAuroraOutlook = () => post<AuroraOutlook>("get-aurora-outlook");
 export const getKIndex = (location: string, start?: string, end?: string) =>
-  post("get-k-index", { location, ...(start ? { start } : {}), ...(end ? { end } : {}) });
+  post<KIndexPoint[]>("get-k-index", {
+    location,
+    ...(start ? { start } : {}),
+    ...(end ? { end } : {}),
+  });

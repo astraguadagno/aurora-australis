@@ -1,101 +1,110 @@
-import Image from "next/image";
+import { getAuroraAlert, getAuroraWatch, getAuroraOutlook } from "@/lib/sws";
+import type { AuroraAlert, AuroraWatch, AuroraOutlook } from "@/lib/types";
+import { toLocal } from "@/lib/time";
+import StatusCard from "@/components/StatusCard";
+import AuroraReadiness from "@/components/AuroraReadiness";
+import KIndexSection from "./kindex-section";
 
-export default function Home() {
+async function fetchSafe<T>(fn: () => Promise<{ data: T }>): Promise<T | null> {
+  try {
+    const res = await fn();
+    return (res as { data: T }).data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function Home() {
+  const [alert, watch, outlook] = await Promise.all([
+    fetchSafe<AuroraAlert>(() => getAuroraAlert()),
+    fetchSafe<AuroraWatch>(() => getAuroraWatch()),
+    fetchSafe<AuroraOutlook>(() => getAuroraOutlook()),
+  ]);
+
+  const alertItems: Array<{ label: string; value: string }> = [];
+  if (alert?.start_time) alertItems.push({ label: "Inicio", value: toLocal(alert.start_time) });
+  if (alert?.valid_until)
+    alertItems.push({ label: "Válido hasta", value: toLocal(alert.valid_until) });
+  if (alert?.k_aus != null) alertItems.push({ label: "K AUS", value: String(alert.k_aus) });
+  if (alert?.lat_band) alertItems.push({ label: "Latitud", value: String(alert.lat_band) });
+
+  const watchItems: Array<{ label: string; value: string }> = [];
+  if (watch?.issue_time) watchItems.push({ label: "Emitido", value: toLocal(watch.issue_time) });
+  if (watch?.start_date) watchItems.push({ label: "Desde", value: toLocal(watch.start_date) });
+  if (watch?.end_date) watchItems.push({ label: "Hasta", value: toLocal(watch.end_date) });
+  if (watch?.k_aus != null) watchItems.push({ label: "K AUS", value: String(watch.k_aus) });
+  if (watch?.lat_band) watchItems.push({ label: "Latitud", value: String(watch.lat_band) });
+
+  const outlookItems: Array<{ label: string; value: string }> = [];
+  if (outlook?.issue_time)
+    outlookItems.push({ label: "Emitido", value: toLocal(outlook.issue_time) });
+  if (outlook?.start_date)
+    outlookItems.push({ label: "Desde", value: toLocal(outlook.start_date) });
+  if (outlook?.end_date) outlookItems.push({ label: "Hasta", value: toLocal(outlook.end_date) });
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="mx-auto max-w-5xl p-6 space-y-8">
+      <h1 className="text-2xl font-semibold">Aurora Dashboard</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <StatusCard title="Alert" status={alert ? "warn" : "info"}>
+          {alertItems.length ? (
+            <ul className="space-y-1">
+              {alertItems.map((it) => (
+                <li key={it.label} className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
+                  <span className="font-medium">{it.value}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span>Sin datos de alerta.</span>
+          )}
+        </StatusCard>
+
+        <StatusCard title="Watch" status={watch ? "warn" : "info"}>
+          {watchItems.length ? (
+            <ul className="space-y-1">
+              {watchItems.map((it) => (
+                <li key={it.label} className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
+                  <span className="font-medium">{it.value}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span>Sin datos de watch.</span>
+          )}
+        </StatusCard>
+
+        <StatusCard title="Outlook" status={outlook ? "info" : "info"}>
+          {outlookItems.length ? (
+            <ul className="space-y-1">
+              {outlookItems.map((it) => (
+                <li key={it.label} className="flex justify-between">
+                  <span className="text-zinc-600 dark:text-zinc-300">{it.label}</span>
+                  <span className="font-medium">{it.value}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span>Sin datos de outlook.</span>
+          )}
+        </StatusCard>
+      </div>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium">K-index (48 h)</h2>
+        <KIndexSection />
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-lg font-medium">¿Salgo a buscarla?</h2>
+        <AuroraReadiness alert={alert ?? undefined} watch={watch ?? undefined} />
+        <p className="text-sm text-zinc-600 dark:text-zinc-300">
+          Cielos oscuros y poca Luna ayudan.
+        </p>
+      </section>
     </div>
   );
 }

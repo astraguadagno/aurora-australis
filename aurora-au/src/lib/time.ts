@@ -10,3 +10,9 @@ export const hoursAgoIso = (h: number) => new Date(Date.now() - h * 3_600_000).t
 
 export const toApiUtc = (d: Date | string) =>
   formatInTimeZone(new Date(d), "UTC", "yyyy-MM-dd HH:mm:ss");
+
+export const fmtHour = (iso: string) =>
+  formatInTimeZone(new Date(iso), process.env.TZ_DEFAULT || "Australia/Melbourne", "HH:mm");
+
+export const fmtDayHour = (iso: string) =>
+  formatInTimeZone(new Date(iso), process.env.TZ_DEFAULT || "Australia/Melbourne", "dd MMM HH:mm");

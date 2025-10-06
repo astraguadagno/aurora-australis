@@ -9,7 +9,7 @@ import CloudStrip from "@/components/CloudStrip";
 export default function WeatherSection() {
   const { location } = useLocation();
 
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     location ? ["weather", location.lat, location.lon] : null,
     () => getWeather(location!.lat, location!.lon),
     { revalidateOnFocus: false },
@@ -32,7 +32,16 @@ export default function WeatherSection() {
 
   return (
     <div className="space-y-2">
-      <div className="text-xs text-zinc-600 dark:text-zinc-300">0% clear → 100% overcast</div>
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-zinc-600 dark:text-zinc-300">0% clear → 100% overcast</div>
+        <button
+          type="button"
+          className="rounded-md border px-2 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800"
+          onClick={() => mutate()}
+        >
+          Refresh
+        </button>
+      </div>
       <div className="border rounded-md">
         {isLoading ? (
           <div className="h-40 flex items-center justify-center text-sm text-zinc-500">

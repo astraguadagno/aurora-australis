@@ -1,28 +1,19 @@
 "use client";
 
-import useSWR from "swr";
 import { useMemo } from "react";
-import { useLocation } from "@/hooks/useLocation";
-import { getWeather } from "@/lib/weather";
+import useLocationDeps from "@/hooks/useLocationDeps";
 import CloudStrip from "@/components/CloudStrip";
 
 export default function WeatherSection() {
-  const { location } = useLocation();
-
-  const { data, error, isLoading, mutate } = useSWR(
-    location ? ["weather", location.lat, location.lon] : null,
-    () => getWeather(location!.lat, location!.lon),
-    { revalidateOnFocus: false },
-  );
+  const deps = useLocationDeps();
 
   const next = useMemo(() => {
-    if (!data) return [] as { time: string; cloudcover: number }[];
     const nowIsoPrefix = new Date().toISOString().slice(0, 13);
-    const slice = data.filter((p) => p.time >= nowIsoPrefix).slice(0, 24);
-    return slice.map((p) => ({ time: p.time, cloudcover: p.cloudcover }));
-  }, [data]);
+    const slice = deps.cloudSeries.filter((p) => p.time >= nowIsoPrefix).slice(0, 24);
+    return slice.map((p) => ({ time: p.time, cloudcover: p.cloudPct }));
+  }, [deps.cloudSeries]);
 
-  if (!location) {
+  if (!deps.location) {
     return (
       <div className="rounded-md border px-2 py-2 text-sm text-zinc-600 dark:text-zinc-300">
         Pick a location to load weather.
@@ -37,17 +28,17 @@ export default function WeatherSection() {
         <button
           type="button"
           className="rounded-md border px-2 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          onClick={() => mutate()}
+          onClick={() => deps.refreshAll()}
         >
           Refresh
         </button>
       </div>
       <div className="border rounded-md">
-        {isLoading ? (
+        {deps.loading ? (
           <div className="h-40 flex items-center justify-center text-sm text-zinc-500">
             Loading…
           </div>
-        ) : error ? (
+        ) : deps.error ? (
           <div className="h-40 flex items-center justify-center text-sm text-red-500">
             Error loading weather
           </div>
